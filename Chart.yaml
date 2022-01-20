@@ -1,0 +1,19 @@
+annotations:
+  category: Analytics
+apiVersion: v2
+appVersion: 0.23.1
+description: Thanos is a highly available metrics system that can be added on top
+  of existing Prometheus deployments, providing a global query view across all Prometheus
+  installations.
+keywords:
+- analytics
+- monitoring
+- prometheus
+- thanos
+maintainers:
+- email: aviralharsh05@gmail.com
+  name: Aviral Harsh
+name: thanos
+sources:
+- https://thanos.io
+version: 8.1.1

@@ -1,0 +1,365 @@
+image:
+  repository: quay.io/thanos/thanos
+  tag: v0.16.0
+  pullPolicy: Always
+
+query:
+  ## @param query.enabled Set to true to enable Thanos Query component
+  
+  enabled: true
+  ## @param query.logLevel Thanos Query log level
+  
+  logLevel: debug
+  ## @param query.logFormat Thanos Query log format
+  
+  logFormat: logfmt
+  ## @param query.replicaLabel Replica indicator(s) along which data is de-duplicated
+  
+  replicaLabel: replica
+
+  labels: thanos-querier
+
+  args: []
+
+  priorityClassName: ""
+  ## @param query.replicaCount Number of Thanos Query replicas to deploy
+  ##
+  replicaCount: 1
+  ## @param query.updateStrategy.type Update strategy type for Thanos Query replicas
+  ##
+  updateStrategy:
+    type: RollingUpdate
+ 
+  podSecurityContext:
+    enabled: false
+    fsGroup: 1001
+  
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: false
+    allowPrivilegeEscalation: true
+    readOnlyRootFilesystem: false
+ 
+  resources:
+    limits: {}
+    requests: {}
+ 
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 15
+    successThreshold: 1
+  
+  affinity: {}
+ 
+  tolerations: []
+
+  ## Service parameters
+  service:
+    enabled: true
+    ## @param query.service.type Kubernetes service type
+    ##
+    type: ClusterIP
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPU: 80
+    targetMemory: 80
+
+  externalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-querier.local
+    tlsSecretName: ""
+
+  internalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-querier-internal.local
+    tls: []
+
+compactor:
+  
+  enabled: true
+  
+  logLevel: debug
+  logFormat: logfmt
+
+  replicaCount: 1
+  
+  retentionResolutionRaw: 30d
+  retentionResolution5m: 30d
+  retentionResolution1h: 10y
+  ## @param compactor.consistencyDelay Minimum age of fresh (non-compacted) blocks before they are being processed
+  ##
+  consistencyDelay: 30m
+
+  objstoreconfig: ""
+
+  envName: ""
+  envValue: ""
+
+  labels: thanos-compactor
+  
+  resources:
+    limits: {}
+    requests: {}
+
+  podSecurityContext:
+    enabled: false
+    fsGroup: 1001
+  
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: false
+    allowPrivilegeEscalation: true
+    readOnlyRootFilesystem: false
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 15
+    successThreshold: 1
+  
+  affinity: {}
+  tolerations: []
+
+  service:
+    enabled: false
+    type: ClusterIP
+
+  externalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-compactor.local
+    tlsSecretName: ""
+
+  internalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-compactor-internal.local
+    tls: []
+    
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+
+## @section Thanos Store Gateway parameters
+
+storegateway:
+  
+  enabled: true
+  
+  logLevel: info
+  
+  logFormat: logfmt
+  
+  objstoreconfig: ""
+
+  envName: ""
+
+  envValue: ""
+
+  createConfigmap: false
+
+  labels: thanos-store-gateway
+  
+  replicaCount: 1
+
+  podManagementPolicy: OrderedReady
+
+  podSecurityContext:
+    enabled: false
+    fsGroup: 1001
+  
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: false
+    allowPrivilegeEscalation: true
+    readOnlyRootFilesystem: false
+
+  priorityClassName: ""
+  
+  resources:
+    limits: {}
+    requests: {}
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 15
+    successThreshold: 1
+  
+  affinity: {}
+  tolerations: []
+  
+  createConfigmap: false
+
+  service:
+    enabled: true
+    type: ClusterIP
+  
+  externalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-storegateway.local
+    tlsSecretName: ""
+
+  internalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-storegateway-internal.local
+    tls: []
+
+## @section Thanos Ruler parameters
+
+ruler:
+  
+  enabled: true
+  
+  logLevel: info
+  
+  logFormat: logfmt
+  
+  replicaLabel: replica
+  
+  createConfigmap: true
+
+  objstoreconfig: ""
+  
+  envName: ""
+  envValue: ""
+
+  labels: thanos-ruler
+
+  ## @param ruler.alertmanagers Alert managers URLs array
+  ##
+  alertmanagers: []
+
+  alertmanagersConfig: ""
+  
+  evalInterval: 15s
+  
+  replicaCount: 1
+  
+  podSecurityContext:
+    enabled: false
+    fsGroup: 1001
+  
+  containerSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: false
+    allowPrivilegeEscalation: true
+    readOnlyRootFilesystem: false
+  
+  resources:
+    limits: {}
+    requests: {}
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 6
+  
+  startupProbe:
+    enabled: false
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 15
+    successThreshold: 1
+  
+  affinity: {}
+  tolerations: []
+  
+  priorityClassName: ""
+  
+  service:
+    enabled: true
+    type: ClusterIP
+
+  externalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-ruler.local
+    tlsSecretName: ""
+
+  internalIngress:
+    enabled: false
+    annotations: {}
+    hostname: thanos-ruler-internal.local
+    tls: []
