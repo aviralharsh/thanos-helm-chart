@@ -1,0 +1,26 @@
+{{- if .Values.storegateway.enabled -}}
+{{- if .Values.storegateway.externalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.storegateway.externalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.storegateway.externalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-storegateway-external
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.storegateway.externalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-store-gateway
+              servicePort: 9090
+            pathType: ImplementationSpecific
+  tls:
+    - secretName: {{ .Values.storegateway.externalIngress.tlsSecretName }}
+      hosts:
+         - {{ .Values.storegateway.externalIngress.hostname }}
+{{- end -}}
+{{- end -}}

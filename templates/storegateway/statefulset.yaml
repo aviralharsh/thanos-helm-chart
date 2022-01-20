@@ -1,0 +1,104 @@
+{{- if and .Values.storegateway.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-store-gateway
+  namespace: default
+  labels:
+    app: {{ .Values.storegateway.labels }}
+spec:
+  replicas: {{ .Values.storegateway.replicaCount }}
+  podManagementPolicy: {{ .Values.storegateway.podManagementPolicy }}
+  serviceName: thanos-store-gateway
+  selector:
+    matchLabels:
+      app: {{ .Values.storegateway.labels }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.storegateway.labels }}
+        thanos-store-api: "true"
+    spec:
+    {{- with .Values.storegateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.storegateway.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.storegateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- if .Values.storegateway.priorityClassName }}
+      priorityClassName: {{ .Values.storegateway.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.storegateway.schedulerName }}
+      schedulerName: {{ .Values.storegateway.schedulerName }}
+      {{- end }}
+      {{- if .Values.storegateway.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.storegateway.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: storegateway
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.storegateway.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.storegateway.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          args:
+            - store
+            - --log.level={{ .Values.storegateway.logLevel }}
+            - --log.format={{ .Values.storegateway.logFormat }}
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --data-dir=/data-thanos
+            - "--objstore.config={type: GCS, config: {bucket: {{ .Values.storegateway.objstoreconfig }} }}"
+            - "--index-cache-size=500MB"
+            - "--chunk-pool-size=500MB"
+          env:
+            - name : {{ .Values.storegateway.envName }}
+              value: {{ .Values.storegateway.envValue }}
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          {{- if .Values.storegateway.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 10902
+          {{- end }}
+          {{- if .Values.storegateway.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 10902
+          {{- end }}
+          {{- if .Values.storegateway.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          {{- else if .Values.storegateway.customReadinessProbe }}
+          startupProbe:
+          {{- end }}
+          {{- if .Values.storegateway.lifecycleHooks }}
+          lifecycle:
+          {{- end }}
+          {{- if .Values.storegateway.resources }}
+          resources: {{- toYaml .Values.storegateway.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: mountName #Replace this with name
+              mountPath: /mountPath #Replace this with path
+              readOnly: true
+      volumes:
+        - name: mountName #Replace this with name
+          secret:
+            secretName: secret #Replace this with secret name
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.storegateway.createConfigmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-storegateway-configmap
+  namespace: default
+  labels:
+    app.kubernetes.io/component: storegateway
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+data:
+  alert_down_services.rules.yaml: |
+{{ end }}

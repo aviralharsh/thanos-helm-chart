@@ -1,0 +1,22 @@
+{{- if .Values.storegateway.enabled -}}
+{{- if .Values.storegateway.internalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.storegateway.internalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.storegateway.internalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-storegateway-internal
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.storegateway.internalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-store-gateway
+              servicePort: 9090
+            pathType: ImplementationSpecific
+{{- end }}
+{{- end }}
