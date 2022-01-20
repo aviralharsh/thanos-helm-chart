@@ -1,0 +1,89 @@
+{{- if .Values.compactor.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: thanos-compactor
+  namespace: default
+  labels:
+    app: {{ .Values.compactor.labels }}
+spec:
+  replicas: {{ .Values.compactor.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.compactor.labels }}
+  serviceName: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.compactor.labels }}
+    spec:
+      {{- with .Values.compactor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.compactor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.compactor.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.compactor.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: compactor
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.compactor.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.compactor.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          args:
+            {{- if .Values.query.args }}
+            {{- else }}
+            - compact
+            - --log.level={{ .Values.compactor.logLevel }}
+            - --log.format={{ .Values.compactor.logFormat }}
+            - --http-address=0.0.0.0:10902
+            - --data-dir=/data
+            - --retention.resolution-raw={{ .Values.compactor.retentionResolutionRaw }}
+            - --retention.resolution-5m={{ .Values.compactor.retentionResolution5m }}
+            - --retention.resolution-1h={{ .Values.compactor.retentionResolution1h }}
+            - --consistency-delay={{ .Values.compactor.consistencyDelay }}
+            - "--objstore.config={type: GCS, config: {bucket: {{ .Values.compactor.objstoreconfig }} }}"
+            - --wait
+            {{- end }}
+          env:
+            - name: {{ .Values.compactor.envName }}
+              value: {{ .Values.compactor.envValue }}
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+          {{- if .Values.compactor.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 10902
+          {{- end }}
+          {{- if .Values.compactor.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 10902
+          {{- end }}
+          {{- if .Values.compactor.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          {{- end }}
+          {{- if .Values.compactor.resources }}
+          resources: {{- toYaml .Values.compactor.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: volumeName #Replace this with name
+              mountPath: /mountPath #Replace this with path
+              readOnly: false
+      volumes:
+        - name: volumeName #Replace this with name
+          secret:
+            secretName: secretName #Replace this with secret name
+{{- end }}

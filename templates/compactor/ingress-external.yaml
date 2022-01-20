@@ -1,0 +1,26 @@
+{{- if .Values.compactor.enabled -}}
+{{- if .Values.compactor.externalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.compactor.externalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.compactor.externalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-compactor-external
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.compactor.externalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-compactor
+              servicePort: 9090
+            pathType: ImplementationSpecific
+  tls:
+    - secretName: {{ .Values.compactor.externalIngress.tlsSecretName }}
+      hosts:
+         - {{ .Values.compactor.externalIngress.hostname }}
+{{- end -}}
+{{- end -}}

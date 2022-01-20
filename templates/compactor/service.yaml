@@ -1,0 +1,17 @@
+{{- if .Values.compactor.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.compactor.labels }}
+  name: thanos-compactor
+  namespace: default
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: http
+    name: http
+  selector:
+    app: thanos-compactor
+{{- end }}

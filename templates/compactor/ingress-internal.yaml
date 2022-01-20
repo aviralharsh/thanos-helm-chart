@@ -1,0 +1,22 @@
+{{- if .Values.compactor.enabled -}}
+{{- if .Values.compactor.internalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.compactor.internalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.compactor.internalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-compactor-internal
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.compactor.internalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-compactor
+              servicePort: 9090
+            pathType: ImplementationSpecific
+{{- end }}
+{{- end }}

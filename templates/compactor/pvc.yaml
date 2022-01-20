@@ -1,0 +1,17 @@
+{{- if and .Values.compactor.persistence.enabled (not .Values.compactor.persistence.existingClaim) .Values.compactor.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: thanos-compactor
+  namespace: default
+  labels:
+    app.kubernetes.io/component: compactor
+spec:
+  accessModes:
+  {{- range .Values.compactor.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.compactor.persistence.size | quote }}
+{{- end }}
