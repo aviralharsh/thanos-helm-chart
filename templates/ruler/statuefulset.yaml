@@ -1,0 +1,122 @@
+{{- if .Values.ruler.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: {{ .Values.ruler.labels }}
+  name: thanos-ruler
+  namespace: default
+spec:
+  replicas: {{ .Values.ruler.replicaCount }}
+  serviceName: thanos-ruler
+  selector:
+    matchLabels:
+      app: {{ .Values.ruler.labels }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.ruler.labels }}
+        thanos-store-api: "true"
+    spec:
+    {{- with .Values.ruler.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.ruler.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.ruler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- if .Values.ruler.priorityClassName }}
+      priorityClassName: {{ .Values.ruler.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.ruler.schedulerName }}
+      schedulerName: {{ .Values.ruler.schedulerName }}
+      {{- end }}
+      {{- if .Values.ruler.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.ruler.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ruler
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.ruler.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.ruler.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          args:
+            - rule
+            - --log.level={{ .Values.ruler.logLevel }}
+            - --log.format={{ .Values.ruler.logFormat }}
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --data-dir=/data-thanos
+            - --eval-interval={{ .Values.ruler.evalInterval }}
+            {{- range .Values.ruler.alertmanagers }}
+            - --alertmanagers.url={{ . }}
+            {{- end }}
+            {{- if .Values.ruler.alertmanagersConfig }}
+            - --alertmanagers.config-file=/conf/alertmanagers/alertmanagers_config.yml
+            {{- end }}
+            - --label=ruler_cluster="prometheus-ha"
+            - --label=replica="$(POD_NAME)"
+            - --alert.label-drop={{ .Values.ruler.replicaLabel }}
+            - "--objstore.config={type: GCS, config: {bucket: {{ .Values.ruler.objstoreconfig }} }}"
+            - --rule-file=/etc/thanos-ruler/*.rules.yaml
+            - --query=thanos-querier:9090
+          env:
+            - name : {{ .Values.ruler.envName }}
+              value: {{ .Values.ruler.envValue }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          {{- if .Values.ruler.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+          {{- end }}
+          {{- if .Values.ruler.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          {{- end }}
+          {{- if .Values.ruler.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          {{- else if .Values.ruler.customReadinessProbe }}
+          startupProbe:
+          {{- end }}
+          {{- if .Values.ruler.lifecycleHooks }}
+          lifecycle:
+          {{- end }}
+          {{- if .Values.ruler.resources }}
+          resources: {{- toYaml .Values.ruler.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /etc/thanos-ruler
+              name: config
+            - name: mountName #Replace this with name
+              mountPath: /Path #Replace this with path
+              readOnly: false
+      volumes:
+        - configMap:
+            name: thanos-ruler-rules
+          name: config
+        - name: mountName #Replace this with name
+          secret:
+            secretName: secretName #Replace this with Secret name
+{{- end }}

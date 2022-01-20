@@ -1,0 +1,26 @@
+{{- if .Values.ruler.enabled -}}
+{{- if .Values.ruler.externalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.ruler.externalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.ruler.externalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-ruler-external
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.ruler.externalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-ruler
+              servicePort: 9090
+            pathType: ImplementationSpecific
+  tls:
+    - secretName: {{ .Values.ruler.externalIngress.tlsSecretName }}
+      hosts:
+         - {{ .Values.ruler.externalIngress.hostname }}
+{{- end -}}
+{{- end -}}

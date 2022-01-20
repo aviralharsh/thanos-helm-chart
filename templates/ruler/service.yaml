@@ -1,0 +1,17 @@
+{{- if .Values.ruler.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.ruler.labels }}
+  name: thanos-ruler
+  namespace: default
+spec:
+  ports:
+    - port: 9090
+      protocol: TCP
+      targetPort: http
+      name: http
+  selector:
+    app: {{ .Values.ruler.labels }}
+{{- end }}

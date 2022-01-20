@@ -1,0 +1,22 @@
+{{- if .Values.ruler.enabled -}}
+{{- if .Values.ruler.internalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.ruler.internalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.ruler.internalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-ruler-internal
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.ruler.internalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-ruler
+              servicePort: 9090
+            pathType: ImplementationSpecific
+{{- end }}
+{{- end }}
