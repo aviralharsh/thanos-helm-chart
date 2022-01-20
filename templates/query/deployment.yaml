@@ -1,0 +1,94 @@
+{{- if .Values.query.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-querier
+  namespace: default
+  labels:
+    app: {{ .Values.query.labels }}
+spec:
+  replicas: {{ .Values.query.replicaCount }}
+  {{- if .Values.query.updateStrategy }}
+  strategy: {{- toYaml .Values.query.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.query.labels }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.query.labels }}
+    spec:
+    {{- with .Values.query.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.query.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.query.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- if .Values.query.priorityClassName }}
+      priorityClassName: {{ .Values.query.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.query.schedulerName }}
+      schedulerName: {{ .Values.query.schedulerName }}
+      {{- end }}
+      {{- if .Values.query.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.query.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: query
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.query.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.query.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          args:
+            {{- if .Values.query.args }}
+            {{- else }}
+            - query
+            - --log.level={{ .Values.query.logLevel }}
+            - --log.format={{ .Values.query.logFormat }}
+            - --grpc-address=0.0.0.0:10901
+            - --http-address=0.0.0.0:10902
+            - --query.replica-label={{ .Values.query.replicaLabel }}
+            - --store=dnssrv+thanos-store-gateway:10901
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+          {{- if .Values.query.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              port: http
+              path: /-/healthy
+          {{- end }}
+          {{- if .Values.query.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /-/ready
+          {{- end }}
+          {{- if .Values.query.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+          {{- else if .Values.query.customReadinessProbe }}
+          startupProbe:
+          {{- end }}
+          {{- if .Values.query.lifecycleHooks }}
+          lifecycle:
+          {{- end }}
+          {{- if .Values.query.resources }}
+          resources: {{- toYaml .Values.query.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

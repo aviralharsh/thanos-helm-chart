@@ -1,0 +1,22 @@
+{{- if .Values.query.enabled -}}
+{{- if .Values.query.internalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.query.internalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.query.internalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-query-internal
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.query.internalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-querier
+              servicePort: 9090
+            pathType: ImplementationSpecific
+{{- end }}
+{{- end }}

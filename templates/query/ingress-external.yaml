@@ -1,0 +1,26 @@
+{{- if .Values.query.enabled -}}
+{{- if .Values.query.externalIngress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+{{- if .Values.query.externalIngress.annotations }}
+  annotations:
+{{ toYaml .Values.query.externalIngress.annotations | indent 4 }}
+{{- end }}
+  name: thanos-query-external
+  namespace: default
+spec:
+  rules:
+    - host: {{ .Values.query.externalIngress.hostname }}
+      http:
+        paths:
+          - backend:
+              serviceName: thanos-querier
+              servicePort: 9090
+            pathType: ImplementationSpecific
+  tls:
+    - secretName: {{ .Values.query.externalIngress.tlsSecretName }}
+      hosts:
+         - {{ .Values.query.externalIngress.hostname }}
+{{- end -}}
+{{- end -}}

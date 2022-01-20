@@ -1,0 +1,29 @@
+{{- if .Values.query.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: thanos-query
+  namespace: default
+  labels:
+    app: {{ .Values.query.labels }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: thanos-query
+  minReplicas: {{ .Values.query.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.query.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.query.autoscaling.targetMemory }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.query.autoscaling.targetMemory  }}
+    {{- end }}
+    {{- if .Values.query.autoscaling.targetCPU }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.query.autoscaling.targetCPU }}
+    {{- end }}
+{{- end }}
